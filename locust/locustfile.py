@@ -18,19 +18,27 @@ class InsertUpdateAndRead(TaskSet):
 
         self.insert = "insert into {table} (data) values (?)".format(
             table=table)
-        self.select = "select * from {table}".format(table=table)
+        self.select = "select * from {table} limit 10000".format(table=table)
 
         self.bulk_args = [(OneK, )] * bulk_size
 
         self.payload_insert = json.dumps(
             {"stmt": self.insert, "bulk_args": self.bulk_args})
+        self.payload_insert_single = json.dumps({"stmt": "insert into {table} (data) values ('{onek}')".format(table=table, onek=OneK)})
         self.payload_read = json.dumps({"stmt": self.select})
+        print self.payload_insert_single
 
     @task(8)
-    def insert10k(self):
+    def insert10ksingle(self):
         for ins in range(self.num_inserts):
             self.client.request('post',
-                ENDPOINT, data = self.payload_insert, headers = {"ContentType": "application/json"})
+                ENDPOINT, data = self.payload_insert_single, headers = {"ContentType": "application/json"})
+    # @task(8)
+    # def insert10k(self):
+    #     for ins in range(self.num_inserts):
+    #         self.client.request('post',
+    #             ENDPOINT, data = self.payload_insert, headers = {"ContentType": "application/json"})
+
 
     @task(2)
     def read10k(self):
